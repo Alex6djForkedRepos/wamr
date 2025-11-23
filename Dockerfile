@@ -50,14 +50,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-# Copy root package.json (for version info)
-COPY package.json ./package.json
+# Copy root package files and workspace configuration
+COPY package.json package-lock.json turbo.json ./
 
-# Copy backend package files
-COPY backend/package*.json ./
+# Copy workspace package.json files to maintain structure for npm ci
+COPY backend/package*.json ./backend/
+COPY frontend/package*.json ./frontend/
 
-# Install production dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Install all production dependencies (workspaces), ignore prepare scripts
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
 # Copy built backend and frontend
 COPY --from=builder /app/backend/dist ./dist
